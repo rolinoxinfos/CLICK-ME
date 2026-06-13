@@ -86,7 +86,7 @@ def get_ai_response(user_input):
     """Get a response from the AI based on user input"""
     user_lower = user_input.lower().strip()
     
-    # Check for crash triggers
+    # Check for crash triggers - ONLY if user mentions "runn" or says they're not lunn
     if "runn" in user_lower or ("your" in user_lower and "not" in user_lower and "lunn" in user_lower):
         return "CRASH"
     
@@ -277,6 +277,7 @@ glitch_timer = 0
 error_state_timer = 0
 lunn_called_twice = False
 dialogue_timer = 0
+pending_crash = False
 
 # Eye tracking
 cursor_x = 0
@@ -515,6 +516,18 @@ def trigger_eye_crash():
     code_used["crash"] = True
 
 
+def draw_runn_eye_popup():
+    """Draw the eye that appears when user says runn"""
+    screen.fill((0, 0, 0))
+    
+    # Draw big eye in center
+    draw_eye(WIDTH // 2, HEIGHT // 2, 120, tracking=True)
+    
+    # Draw message
+    msg = big_font.render("you mentioned me...", True, (255, 0, 0))
+    screen.blit(msg, (WIDTH//2 - 300, HEIGHT//2 + 200))
+
+
 running = True
 enter_pressed = False
 
@@ -589,7 +602,10 @@ while running:
                         response = get_ai_response(user_text)
                         
                         if response == "CRASH":
-                            trigger_eye_crash()
+                            # Show eye popup first, THEN go to mini game
+                            state = "RUNN_EYE_POPUP"
+                            pending_crash = True
+                            dialogue_timer = 180  # 3 seconds
                         else:
                             ai_dialogue_display = response
                             dialogue_timer = 120
@@ -642,6 +658,12 @@ while running:
 
     elif state == "AI_POPUP":
         draw_ai_popup(ai_name, ai_dialogue_display, user_text)
+
+    elif state == "RUNN_EYE_POPUP":
+        draw_runn_eye_popup()
+        dialogue_timer -= 1
+        if dialogue_timer <= 0:
+            trigger_eye_crash()
 
     elif state == "MINI_GAME":
         draw_mini_game()
